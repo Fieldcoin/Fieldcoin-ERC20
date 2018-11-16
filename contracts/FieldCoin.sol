@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "./ERC20/MintableToken.sol";
-import "./ERC20/BurnableToken.sol";
-import "./math/SafeMath.sol";
+import "./MintableToken.sol";
+import "./BurnableToken.sol";
+import "./SafeMath.sol";
 
 contract FieldCoin is MintableToken, BurnableToken{
 
@@ -21,45 +21,54 @@ contract FieldCoin is MintableToken, BurnableToken{
     //flag to set token release true=> token is ready for transfer
     bool public transferEnabled;
     //token available for offering
-    uint256 public TOKEN_OFFERING_ALLOWANCE = 770e6 * 10   **  uint256(decimals);//770 million(sale+bonus)
+    uint256 public TOKEN_OFFERING_ALLOWANCE = 770e6 * 10 **18;//770 million(sale+bonus)
     // Address of token offering
     address public tokenOfferingAddr;
+    //address to collect tokens when land is transferred
+    address public landCollectorAddr;
 
     mapping(address => bool) public transferAgents;
-    //mapping for whitelisted address
-    mapping(address => bool) private whitelist;
     //mapping for blacklisted address
     mapping(address => bool) private blacklist;
 
     /**
-     * Check if transfer is allowed
-     *
-     * Permissions:
-     *                                                       Owner  OffeirngContract    Others
-     * transfer (before transferEnabled is true)               y            n              n
-     * transferFrom (before transferEnabled is true)           y            y              y
-     * transfer/transferFrom after transferEnabled is true     y            n              y
-     */    
+    * Check if transfer is allowed
+    *
+    * Permissions:
+    *                                                       Owner  OffeirngContract    Others
+    * transfer (before transferEnabled is true)               y            n              n
+    * transferFrom (before transferEnabled is true)           y            y              y
+    * transfer/transferFrom after transferEnabled is true     y            n              y
+    */    
     modifier canTransfer(address sender) {
         require(transferEnabled || transferAgents[sender]);
           _;
     }
 
     /**
-     * Check if token offering address is set or not
-     */
+    * Check if token offering address is set or not
+    */
     modifier onlyTokenOfferingAddrNotSet() {
         require(tokenOfferingAddr == address(0x0));
         _;
     }
 
     /**
-     * Check if address is a valid destination to transfer tokens to
-     * - must not be zero address
-     * - must not be the token address
-     * - must not be the owner's address
-     * - must not be the token offering contract address
-     */
+    * Check if land collector address is set or not
+    */
+    modifier onlyWhenLandCollectporAddressIsSet() {
+        require(landCollectorAddr != address(0x0));
+        _;
+    }
+
+
+    /**
+    * Check if address is a valid destination to transfer tokens to
+    * - must not be zero address
+    * - must not be the token address
+    * - must not be the owner's address
+    * - must not be the token offering contract address
+    */
     modifier validDestination(address to) {
         require(to != address(0x0));
         require(to != address(this));
@@ -88,9 +97,10 @@ contract FieldCoin is MintableToken, BurnableToken{
     */
     function setBountyWallet (address _bountyWallet) public onlyOwner returns (bool) {
         require(_bountyWallet != address(0x0));
-        if(bountyWallet != address(0x0)){  
+        if(bountyWallet == address(0x0)){  
             bountyWallet = _bountyWallet;
             balances[bountyWallet] = 20e6 * 10   **  uint256(decimals); //20 million
+            balances[owner] = balances[owner].sub(20e6 * 10   **  uint256(decimals));
         }else{
             address oldBountyWallet = bountyWallet;
             bountyWallet = _bountyWallet;
@@ -106,9 +116,10 @@ contract FieldCoin is MintableToken, BurnableToken{
     */
     function setTeamWallet (address _teamWallet) public onlyOwner returns (bool) {
         require(_teamWallet != address(0x0));
-        if(teamWallet != address(0x0)){  
+        if(teamWallet == address(0x0)){  
             teamWallet = _teamWallet;
             balances[teamWallet] = 90e6 * 10   **  uint256(decimals); //90 million
+            balances[owner] = balances[owner].sub(90e6 * 10   **  uint256(decimals));
         }else{
             address oldTeamWallet = teamWallet;
             teamWallet = _teamWallet;
@@ -124,7 +135,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     * return bool true=> transfer is succesful
     */
     function transfer(address to, uint256 value) canTransfer(msg.sender) validDestination(to) public returns (bool) {
-        super.transfer(to, value);
+        return super.transfer(to, value);
     }
 
     /**
@@ -135,7 +146,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     * @return bool true=> transfer is succesful
     */
     function transferFrom(address from, address to, uint256 value) canTransfer(msg.sender) validDestination(to) public returns (bool) {
-        super.transferFrom(from, to, value);
+        return super.transferFrom(from, to, value);
     }
 
     /**
@@ -151,12 +162,13 @@ contract FieldCoin is MintableToken, BurnableToken{
     }
 
     /**
-     * @dev Set token offering to approve allowance for offering contract to distribute tokens
-     *
-     * @param offeringAddr Address of token offerng contract i.e., fieldcoinsale contract
-     * @param amountForSale Amount of tokens for sale, set 0 to max out
-     */
+    * @dev Set token offering to approve allowance for offering contract to distribute tokens
+    *
+    * @param offeringAddr Address of token offerng contract i.e., fieldcoinsale contract
+    * @param amountForSale Amount of tokens for sale, set 0 to max out
+    */
     function setTokenOffering(address offeringAddr, uint256 amountForSale) external onlyOwner onlyTokenOfferingAddrNotSet {
+        require (offeringAddr != address(0x0));
         require(!transferEnabled);
 
         uint256 amount = (amountForSale == 0) ? TOKEN_OFFERING_ALLOWANCE : amountForSale;
@@ -164,7 +176,21 @@ contract FieldCoin is MintableToken, BurnableToken{
 
         approve(offeringAddr, amount);
         tokenOfferingAddr = offeringAddr;
+        //start the transfer for offeringAddr
+        setTransferAgent(tokenOfferingAddr, true);
+
     }
+
+    /**
+    * @dev set land collector address
+    *
+    */
+    function setLandCollector(address collectorAddr) public onlyOwner {
+        require (collectorAddr != address(0x0));
+        require(!transferEnabled);
+        landCollectorAddr = collectorAddr;
+    }
+
 
     /**
     * @dev release tokens for transfer
@@ -174,6 +200,8 @@ contract FieldCoin is MintableToken, BurnableToken{
         transferEnabled = true;
         // End the offering
         approve(tokenOfferingAddr, 0);
+        //stop the transfer for offeringAddr
+        setTransferAgent(tokenOfferingAddr, false);
     }
 
     /**
@@ -199,6 +227,18 @@ contract FieldCoin is MintableToken, BurnableToken{
         balances[_investor] = 0;
     }
 
+    /**
+    * @dev buy land during ICO
+    * @param _investor investor whose tokens are to be transferred
+    * @param _tokens amount of tokens to be transferred
+    */
+    function _buyLand(address _investor, uint256 _tokens) external onlyWhenLandCollectporAddressIsSet{
+        require (!transferEnabled);
+        require (msg.sender == tokenOfferingAddr);
+        balances[landCollectorAddr] = balances[landCollectorAddr].add(_tokens);
+        balances[_investor] = balances[_investor].sub(_tokens);
+    }
+
    /**
    * @dev Burns a specific amount of tokens.
    * @param _value The amount of token to be burned.
@@ -209,9 +249,9 @@ contract FieldCoin is MintableToken, BurnableToken{
     }
 
     /**
-    * @dev check address is whitelisted or not
+    * @dev check address is blacklisted or not
     * @param _addr who will be checked
-    * @return true=> if whitelisted, false=> if not
+    * @return true=> if blacklisted, false=> if not
     *
     */
     function isBlacklisted(address _addr) public view returns(bool){

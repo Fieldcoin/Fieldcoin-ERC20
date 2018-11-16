@@ -1,22 +1,22 @@
 pragma solidity ^0.4.24;
 
-import "./math/SafeMath.sol";
-import "./crowdsale/Crowdsale.sol";
+import "./SafeMath.sol";
+import "./Crowdsale.sol";
 import "./FieldCoin.sol";
-import "./lifecycle/Pausable.sol";
+import "./Pausable.sol";
 
 contract FieldCoinSale is Crowdsale, Pausable{
 
     using SafeMath for uint256;
 
     //To store tokens supplied during CrowdSale
-    uint256 public totalSaleSupply = 600000000; // 600 million tokens
+    uint256 public totalSaleSupply = 600000000 *10 **18; // 600 million tokens
     //price of token in cent
     uint256 public tokenCost = 50; //50 cent i.e., .5$
     //1 eth = usd in cents, eg: 1 eth = 500$ so, 1 eth = 500,00 cents
     uint256 public ETH_USD;
     //min contribution 
-    uint256 public minContribution = 100; //10000 cent i.e., 100$
+    uint256 public minContribution = 100; //100,00 cent i.e., 100$
     //max contribution 
     uint256 public maxContribution = 100000000; //100 million cent i.e., 1 million dollar
     //count for bonus
@@ -24,7 +24,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     //flag to check bonus is initialized or not
     bool public initialized = false;
     //total number of bonus tokens
-    uint256 public bonusTokens = 170000000; //170 millions
+    uint256 public bonusTokens = 170e6 * 10 ** 18; //170 millions
     //tokens for sale
     uint256 public tokensSold = 0;
     //object of FieldCoin
@@ -161,7 +161,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
         // accumulate total token to be given
         uint256 totalNumberOfTokenTransferred = _tokenAmount.add(_bonusTokens);
         //initializing structure for the address of the beneficiary
-        Investor memory _investor = investors[_beneficiary];
+        Investor storage _investor = investors[_beneficiary];
         //Update investor's balance
         _investor.tokenSent = _investor.tokenSent.add(totalNumberOfTokenTransferred);
         _investor.weiReceived = _investor.weiReceived.add(msg.value);
@@ -178,14 +178,13 @@ contract FieldCoinSale is Crowdsale, Pausable{
         if(!objFieldCoin.transferFrom(objFieldCoin.owner(), _beneficiary, _tokenAmount)){
             revert();
         }
-
     }
 
     /**
     * @dev withdraw if KYC not verified
     */
     function withdraw() external{
-        Investor memory _investor = investors[msg.sender];
+        Investor storage _investor = investors[msg.sender];
         //transfer investor's balance to owner
         objFieldCoin._withdraw(msg.sender, _investor.tokenSent);
         //return the ether to the investor balance
@@ -195,6 +194,17 @@ contract FieldCoinSale is Crowdsale, Pausable{
         _investor.tokenSent = 0;
         _investor.bonusSent = 0;
         emit Withdrawn();
+    }
+
+    /**
+    * @dev buy land during ICO
+    * @param _tokens amount of tokens to be transferred
+    */
+    function buyLand(uint256 _tokens) external{
+        Investor memory _investor = investors[msg.sender];
+        require (_tokens <= objFieldCoin.balanceOf(msg.sender).sub(_investor.bonusSent));            
+        //transfer investor's balance to land collector
+        objFieldCoin._buyLand(msg.sender, _tokens);
     }
 
     /*
@@ -224,7 +234,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) whenNotPaused internal view{
         require(initialized == true);
         require(_weiAmount >= getMinContributionInWei());
-        require(_weiAmount >= getMaxContributionInWei());
+        require(_weiAmount <= getMaxContributionInWei());
         super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 
