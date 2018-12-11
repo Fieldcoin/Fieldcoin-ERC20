@@ -1,9 +1,9 @@
 pragma solidity ^0.4.24;
 
-import "./SafeMath.sol";
-import "./Crowdsale.sol";
+import "./math/SafeMath.sol";
+import "./crowdsale/Crowdsale.sol";
 import "./FieldCoin.sol";
-import "./Pausable.sol";
+import "./lifecycle/Pausable.sol";
 
 contract FieldCoinSale is Crowdsale, Pausable{
 
@@ -12,11 +12,11 @@ contract FieldCoinSale is Crowdsale, Pausable{
     //To store tokens supplied during CrowdSale
     uint256 public totalSaleSupply = 600000000 *10 **18; // 600 million tokens
     //price of token in cent
-    uint256 public tokenCost = 50; //50 cent i.e., .5$
+    uint256 public tokenCost = 5; //5 cent i.e., .05$
     //1 eth = usd in cents, eg: 1 eth = 500$ so, 1 eth = 500,00 cents
     uint256 public ETH_USD;
     //min contribution 
-    uint256 public minContribution = 100; //100,00 cent i.e., 100$
+    uint256 public minContribution = 10000; //100,00 cent i.e., 100$
     //max contribution 
     uint256 public maxContribution = 100000000; //100 million cent i.e., 1 million dollar
     //count for bonus

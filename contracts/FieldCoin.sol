@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "./MintableToken.sol";
-import "./BurnableToken.sol";
-import "./SafeMath.sol";
+import "./ERC20/MintableToken.sol";
+import "./ERC20/BurnableToken.sol";
+import "./math/SafeMath.sol";
 
 contract FieldCoin is MintableToken, BurnableToken{
 
