@@ -56,7 +56,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     */
     constructor (uint256 _openingTime, uint256 _closingTime, address _wallet, address _token, uint256 _ETH_USD, uint256 _minContribution, uint256 _maxContribution) public
     Crowdsale(_wallet, _openingTime, _closingTime) {
-        require(_ETH_USD > 0, "ETH USD rate should be greater than 0"););
+        require(_ETH_USD > 0, "ETH USD rate should be greater than 0");
         minContribution = (_minContribution == 0) ? minContribution : _minContribution;
         maxContribution = (_maxContribution == 0) ? maxContribution : _maxContribution;
         ETH_USD = _ETH_USD;
@@ -169,6 +169,27 @@ contract FieldCoinSale is Crowdsale, Pausable{
         super._processPurchase(_beneficiary, totalNumberOfTokenTransferred);
     }
 
+     /**
+    * @dev send token manually to people who invest other than ether
+    * @param _beneficiary Address performing the token purchase
+    * @param weiAmount amount of wei invested
+    */
+    function createTokenManually(address _beneficiary, uint256 weiAmount) external onlyOwner {
+        // calculate token amount to be created
+        uint256 tokens = _getTokenAmount(weiAmount);
+        
+        // update state
+        weiRaised = weiRaised.add(weiAmount);
+    
+        _processPurchase(_beneficiary, tokens);
+        emit TokenPurchase(
+          msg.sender,
+          _beneficiary,
+          weiAmount,
+          tokens
+        );
+    }
+
     /**
     * @dev Source of tokens.
     * @param _beneficiary Address performing the token purchase
@@ -232,10 +253,10 @@ contract FieldCoinSale is Crowdsale, Pausable{
     * @param _weiAmount Value in wei involved in the purchase
     */
     function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) whenNotPaused internal view{
+        require (!hasClosed(), "Sale has been ended");
         require(initialized, "Bonus is not initialized");
         require(_weiAmount >= getMinContributionInWei(), "amount is less than min contribution");
         require(_weiAmount <= getMaxContributionInWei(), "amount is more than max contribution");
-        require (!hasClosed(), "Sale has been ended");
         super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 
@@ -307,6 +328,15 @@ contract FieldCoinSale is Crowdsale, Pausable{
     */
     function getMaxContributionInWei() public view returns(uint256){
         return (maxContribution.mul(1e18)).div(ETH_USD);
+    }
+
+    /**
+    * @dev gives usd raised based on wei raised
+    * @return the usd value in cents
+    *
+    */
+    function usdRaised() public view returns (uint256) {
+        return weiRaised.mul(ETH_USD).div(1e18);
     }
     
 }
