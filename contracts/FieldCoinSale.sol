@@ -11,14 +11,14 @@ contract FieldCoinSale is Crowdsale, Pausable{
 
     //To store tokens supplied during CrowdSale
     uint256 public totalSaleSupply = 600000000 *10 **18; // 600 million tokens
-    //price of token in cent
-    uint256 public tokenCost = 5; //5 cent i.e., .05$
-    //1 eth = usd in cents, eg: 1 eth = 500$ so, 1 eth = 500,00 cents
+    //price of token in cents
+    uint256 public tokenCost = 5; //5 cents i.e., .5$
+    //1 eth = usd in cents, eg: 1 eth = 107.91$ so, 1 eth = =107,91 cents
     uint256 public ETH_USD;
     //min contribution 
-    uint256 public minContribution = 10000; //100,00 cent i.e., 100$
+    uint256 public minContribution = 10000; //100,00 cents i.e., 100$
     //max contribution 
-    uint256 public maxContribution = 100000000; //100 million cent i.e., 1 million dollar
+    uint256 public maxContribution = 100000000; //100 million cents i.e., 1 million dollar
     //count for bonus
     uint256 public milestoneCount;
     //flag to check bonus is initialized or not
@@ -66,7 +66,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     /**
     * @dev Set eth usd rate
     * @param _ETH_USD stores ether value in cents
-    *       i.e., 1 ETH = 50.01 $ so, 1 ETH = 5001 cents
+    *       i.e., 1 ETH = 107.01 $ so, 1 ETH = 10701 cents
     *
     */
     function setETH_USDRate(uint256 _ETH_USD) public onlyOwner{

@@ -82,7 +82,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     *
     */
     constructor () public {
-        name    =   "FieldCoin";
+        name    =   "Fieldcoin";
         symbol  =   "FLC";
         decimals    =   18;  
         totalSupply_ =   1000e6 * 10  **  uint256(decimals); //1000 million
