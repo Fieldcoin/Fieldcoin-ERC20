@@ -56,7 +56,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     */
     constructor (uint256 _openingTime, uint256 _closingTime, address _wallet, address _token, uint256 _ETH_USD, uint256 _minContribution, uint256 _maxContribution) public
     Crowdsale(_wallet, _openingTime, _closingTime) {
-        require(_ETH_USD > 0);
+        require(_ETH_USD > 0, "ETH USD rate should be greater than 0"););
         minContribution = (_minContribution == 0) ? minContribution : _minContribution;
         maxContribution = (_maxContribution == 0) ? maxContribution : _maxContribution;
         ETH_USD = _ETH_USD;
@@ -70,7 +70,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function setETH_USDRate(uint256 _ETH_USD) public onlyOwner{
-        require(_ETH_USD > 0);
+        require(_ETH_USD > 0, "ETH USD rate should be greater than 0");
         ETH_USD = _ETH_USD;
     }
 
@@ -89,7 +89,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function changeMinContribution(uint256 _minContribution) public onlyOwner {
-        require(_minContribution > 0);
+        require(_minContribution > 0, "min contribution should be greater than 0");
         minContribution = _minContribution;
     }
 
@@ -99,7 +99,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function changeMaxContribution(uint256 _maxContribution) public onlyOwner {
-        require(_maxContribution > 0);
+        require(_maxContribution > 0, "max contribution should be greater than 0");
         maxContribution = _maxContribution;
     }
 
@@ -108,7 +108,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     * @param _tokenCost price of 1 token in cents
     */
     function changeTokenCost(uint256 _tokenCost) public onlyOwner {
-        require(_tokenCost > 0);
+        require(_tokenCost > 0, "token cost can not be 0");
         tokenCost = _tokenCost;
     }
 
@@ -118,7 +118,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function changeOpeningTIme(uint256 _openingTime) public onlyOwner {
-        require(_openingTime >= block.timestamp);
+        require(_openingTime >= block.timestamp, "opening time is less than current time");
         openingTime = _openingTime;
     }
 
@@ -128,7 +128,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function changeClosingTime(uint256 _closingTime) public onlyOwner {
-        require(_closingTime >= openingTime);
+        require(_closingTime >= openingTime, "closing time is less than opening time");
         closingTime = _closingTime;
     }
 
@@ -154,7 +154,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
-        require(tokensRemaining() >= _tokenAmount);
+        require(tokensRemaining() >= _tokenAmount, "token need to be transferred is more than the available token");
         uint256 _bonusTokens = _processBonus(_tokenAmount);
         bonusTokens = bonusTokens.sub(_bonusTokens);
         tokensSold = tokensSold.add(_tokenAmount);
@@ -176,7 +176,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
         if(!objFieldCoin.transferFrom(objFieldCoin.owner(), _beneficiary, _tokenAmount)){
-            revert();
+            revert("token delivery failed");
         }
     }
 
@@ -202,7 +202,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     */
     function buyLand(uint256 _tokens) external{
         Investor memory _investor = investors[msg.sender];
-        require (_tokens <= objFieldCoin.balanceOf(msg.sender).sub(_investor.bonusSent));            
+        require (_tokens <= objFieldCoin.balanceOf(msg.sender).sub(_investor.bonusSent), "token to buy land is more than the available number of tokens");
         //transfer investor's balance to land collector
         objFieldCoin._buyLand(msg.sender, _tokens);
     }
@@ -232,9 +232,10 @@ contract FieldCoinSale is Crowdsale, Pausable{
     * @param _weiAmount Value in wei involved in the purchase
     */
     function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) whenNotPaused internal view{
-        require(initialized == true);
-        require(_weiAmount >= getMinContributionInWei());
-        require(_weiAmount <= getMaxContributionInWei());
+        require(initialized, "Bonus is not initialized");
+        require(_weiAmount >= getMinContributionInWei(), "amount is less than min contribution");
+        require(_weiAmount <= getMaxContributionInWei(), "amount is more than max contribution");
+        require (!hasClosed(), "Sale has been ended");
         super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 
@@ -286,7 +287,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     *
     */
     function hasClosed() public view returns (bool) {
-        uint tokensLeft = tokensRemaining();
+        uint256 tokensLeft = tokensRemaining();
         return tokensLeft <= 1e18 || super.hasClosed();
     }
 
