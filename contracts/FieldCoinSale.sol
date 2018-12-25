@@ -108,7 +108,7 @@ contract FieldCoinSale is Crowdsale, Pausable{
     * @param _tokenCost price of 1 token in cents
     */
     function changeTokenCost(uint256 _tokenCost) public onlyOwner {
-        require(_tokenCost > 0, "token cost can not be 0");
+        require(_tokenCost > 0, "token cost can not be zero");
         tokenCost = _tokenCost;
     }
 

@@ -70,8 +70,8 @@ contract FieldCoin is MintableToken, BurnableToken{
     * - must not be the token offering contract address
     */
     modifier validDestination(address to) {
-        require(to != address(0x0), "receiver can't be 0 address");
-        require(to != address(this), "receiver can't be same contract");
+        require(to != address(0x0), "receiver can't be zero address");
+        require(to != address(this), "receiver can't be token address");
         require(to != owner, "receiver can't be owner");
         require(to != address(tokenOfferingAddr), "receiver can't be token offering address");
         _;
@@ -96,7 +96,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     *
     */
     function setBountyWallet (address _bountyWallet) public onlyOwner returns (bool) {
-        require(_bountyWallet != address(0x0), "bounty address can't be 0");
+        require(_bountyWallet != address(0x0), "bounty address can't be zero");
         if(bountyWallet == address(0x0)){  
             bountyWallet = _bountyWallet;
             balances[bountyWallet] = 20e6 * 10   **  uint256(decimals); //20 million
@@ -115,7 +115,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     *
     */
     function setTeamWallet (address _teamWallet) public onlyOwner returns (bool) {
-        require(_teamWallet != address(0x0), "team address can't be 0");
+        require(_teamWallet != address(0x0), "team address can't be zero");
         if(teamWallet == address(0x0)){  
             teamWallet = _teamWallet;
             balances[teamWallet] = 90e6 * 10   **  uint256(decimals); //90 million
@@ -156,7 +156,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     */
     function addBlacklistAddress(address addr) public onlyOwner {
         require(!isBlacklisted(addr), "address is already blacklisted");
-        require(addr != address(0x0), "blacklisting address can't be 0");
+        require(addr != address(0x0), "blacklisting address can't be zero");
         // blacklisted so they can withdraw
         blacklist[addr] = true;
     }
@@ -168,7 +168,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     * @param amountForSale Amount of tokens for sale, set 0 to max out
     */
     function setTokenOffering(address offeringAddr, uint256 amountForSale) external onlyOwner onlyTokenOfferingAddrNotSet {
-        require (offeringAddr != address(0x0), "offering address can't be 0");
+        require (offeringAddr != address(0x0), "offering address can't be zero");
         require(!transferEnabled, "transfer should be diabled");
 
         uint256 amount = (amountForSale == 0) ? TOKEN_OFFERING_ALLOWANCE : amountForSale;
@@ -186,7 +186,7 @@ contract FieldCoin is MintableToken, BurnableToken{
     *
     */
     function setLandCollector(address collectorAddr) public onlyOwner {
-        require (collectorAddr != address(0x0), "land collecting address can't be set to 0");
+        require (collectorAddr != address(0x0), "land collecting address can't be set to zero");
         require(!transferEnabled,  "transfer should be diabled");
         landCollectorAddr = collectorAddr;
     }
